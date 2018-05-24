@@ -87,7 +87,6 @@ def get_files_from_archive():
 
 @app.route("/stats")
 def get_stats():
-	get_files_from_archive()
 	return flask.render_template(
 		"bs-stats.html",
 		username=PARAM.get("username", "_"),
