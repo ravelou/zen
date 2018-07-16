@@ -61,8 +61,7 @@ def getNodeHeight():
 	config = loadConfig()
 	config["quiet"] = True
 	return int(execute(*config["cmd"]["nodeheight"], **config)[0].strip())
-
-
+	
 def restart():
 	logMsg("Restarting node...")
 	config = loadConfig()
@@ -90,6 +89,9 @@ def rebuild():
 	dumpStatus(status)
 
 	snapshot_folder = "%(homedir)s/snapshots"  % config
+	try: os.makedirs(snapshot_folder)
+	except: pass
+
 	snapshots = [os.stat(os.path.join(snapshot_folder, f)) for f in os.listdir(snapshot_folder)]
 	if len(snapshots):
 		snapshot_size = max(snp.st_size for snp in snapshots)

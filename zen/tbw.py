@@ -1,6 +1,6 @@
 # -*- encoding:utf-8 -*-
 
-from zen.cmn import loadJson, dumpJson, logMsg
+from zen.cmn import loadJson, dumpJson, logMsg, getBestSeed
 from zen.chk import loadConfig
 from collections import OrderedDict
 
@@ -40,7 +40,6 @@ def loadParam():
 def dumpParam(param):
 	dumpJson(param, os.path.join(ROOT, NAME+".json"))
 
-
 def get():
 	param = loadParam()
 	config = loadConfig()
@@ -76,10 +75,10 @@ def spread():
 		cowards = set(tbw.keys()) - set(all_addresses)
 		if len(cowards):
 			logMsg("down-voted by : %s" % ", ".join(cowards), stdout=out)
-			reward_back = int(sum([tbw.get(a, 0.) for a in cowards]))*100000000
-			forged = loadForge()
-			forged["rewards"] = "%r" % (int(forged["rewards"])-reward_back)
-			dumpForge(forged)
+			# reward_back = int(sum([tbw.get(a, 0.) for a in cowards]))*100000000
+			# forged = loadForge()
+			# forged["rewards"] = "%r" % (int(forged["rewards"])-reward_back)
+			# dumpForge(forged)
 		newcomers = set(all_addresses) - set(tbw.keys())
 		if len(newcomers):
 			logMsg("up-voted by : %s" % ", ".join(newcomers), stdout=out)
@@ -111,3 +110,9 @@ def extract():
 
 def forgery():
 	logMsg("Distributed token : %.0f" % sum(loadTBW().values()))
+
+
+def adjust(value):
+    data = loadTBW()
+    total = sum(data.values())
+    dumpTBW(OrderedDict(sorted([[a, v/total*value] for a,v in data.items()], key=lambda e:e[-1], reverse=True)))
