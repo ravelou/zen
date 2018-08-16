@@ -1,0 +1,56 @@
+{
+    "begin": [
+        2018, 
+        2, 
+        1, 
+        0
+    ], 
+    "homedir": "/home/persona", 
+    "network": "mainnet", 
+    "publicKey": "0275fffe35050262e30d7cf6d32552da84dd06c8fd7ef0fe39d9c8435f6b61544f", 
+    "database": "persona_mainnet", 
+    "user": "persona", 
+    "cmd": {
+        "rebuild": [
+            "forever stopall --plain", 
+            "sudo service postgresql stop", 
+            "sudo service postgresql start", 
+            "sudo -u postgres psql -q -c \"UPDATE pg_database SET datallowconn = false WHERE datname = '%(database)s';\"", 
+            "sudo -u postgres psql -q -c \"SELECT pid, pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '%(database)s' AND pid <> pg_backend_pid();\"", 
+            "sudo -u postgres dropdb --if-exists %(database)s", 
+            "sudo -u postgres dropuser --if-exists %(user)s", 
+            "sleep 1", 
+            "sudo -u postgres psql -q -c \"update pg_database set encoding = 6, datcollate = 'en_US.UTF8', datctype = 'en_US.UTF8' where datname = 'template0';\"", 
+            "sudo -u postgres psql -q -c \"update pg_database set encoding = 6, datcollate = 'en_US.UTF8', datctype = 'en_US.UTF8' where datname = 'template1';\"", 
+            "sudo -u postgres psql -q -c \"CREATE USER %(user)s WITH PASSWORD 'password' CREATEDB;\"", 
+            "sleep 1", 
+            "createdb %(database)s", 
+            "sudo -u postgres psql -q -c \"UPDATE pg_database SET datallowconn = true WHERE datname = '%(database)s';\"", 
+            "pg_restore -O -j 8 -d %(database)s %(homedir)s/snapshots/%(database)s", 
+            "sudo -u postgres psql -q -d %(database)s -c 'CREATE INDEX IF NOT EXISTS \"mem_accounts2delegates_dependentId\" ON \"mem_accounts2delegates\" (\"dependentId\");'"
+        ], 
+        "restart": [
+            "forever stopall --plain", 
+            "forever cleanlogs --plain", 
+            "forever start --plain %(homedir)s/%(blockchain)s-node/app.js -c %(homedir)s/%(blockchain)s-node/config.%(network)s.json -g %(homedir)s/%(blockchain)s-node/genesisBlock.%(network)s.json"
+        ], 
+        "nodeheight": [
+            "psql -d %(database)s -t -c 'SELECT height FROM blocks ORDER BY HEIGHT DESC LIMIT 1;'"
+        ]
+    }, 
+    "blockchain": "persona", 
+    "delegates": 51, 
+    "nethash": "14b55c1de06caa015362d59ad97a144bc3c9fc2b50ece84b78d13ceaeaf7d8fb", 
+    "blocktime": 8, 
+    "version": "0.0.1", 
+    "snapshots": ["http://5.135.75.78/mainnet/latest-db"], 
+    "seeds": [
+        "http://89.40.7.63:4102", 
+        "http://192.99.54.32:4102", 
+        "http://45.77.180.23:4102", 
+        "http://5.135.75.77:4102"
+    ], 
+    "peer": "http://localhost:4102", 
+    "port": 4102, 
+    "explorer": "http://explorer.persona.im/#"
+}

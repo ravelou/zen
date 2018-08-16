@@ -1,0 +1,14 @@
+{
+    "node": "/home/persona/persona-mainnet/config.mainnet.json", 
+    "username": "ravelou", 
+    "targeting": true, 
+    "excludes": [
+        "PNtWFTmLUevKd1YBkaJg7iAWiWpxu65Uhg"
+    ], 
+    "funds": "PKe5FvaBDpTQcJNHLCph8SobWYuhDUKeb3", 
+    "symbol": "PRS", 
+    "share": 0.95, 
+    "vendorField": "ravelou delegate reward", 
+    "threshold": 0.2, 
+    "rebuild": false
+}
