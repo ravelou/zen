@@ -61,7 +61,7 @@ def getNodeHeight():
 	config = loadConfig()
 	config["quiet"] = True
 	return int(execute(*config["cmd"]["nodeheight"], **config)[0].strip())
-	
+
 def restart():
 	logMsg("Restarting node...")
 	config = loadConfig()
@@ -91,7 +91,7 @@ def rebuild():
 	snapshot_folder = "%(homedir)s/snapshots"  % config
 	try: os.makedirs(snapshot_folder)
 	except: pass
-
+	"""
 	snapshots = [os.stat(os.path.join(snapshot_folder, f)) for f in os.listdir(snapshot_folder)]
 	if len(snapshots):
 		snapshot_size = max(snp.st_size for snp in snapshots)
@@ -120,7 +120,7 @@ def rebuild():
 			status["rebuilding"] = False
 			dumpStatus(status)
 			return
-
+	"""
 	try:
 		out, err = execute(*config["cmd"]["rebuild"], **config)
 		with io.open("rebuild.log", "wb") as log:
@@ -128,7 +128,7 @@ def rebuild():
 	except Exception as error:
 		sys.stdout.write("    Error occured : %s\n" % error)
 		status["rebuilding"] = False
-	else:
+    	else:
 		status.pop("rebuilding", False)
 
 	dumpStatus(status)
