@@ -6,71 +6,57 @@ import json
 import flask
 import sqlite3
 import datetime
-import threading
-import logging
 import requests
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from flask_bootstrap import Bootstrap
-from collections import OrderedDict 
+from collections import OrderedDict
 from zen import tfa, crypto
 from zen.cmn import loadConfig, loadJson
-from zen.chk import getBestSeed, getNextForgeRound
+from zen.chk import getNextForgeRound
 from zen.tbw import loadTBW, spread, loadParam
-from zen.app import opt
+import app.opt
+
+from app import appweb
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
-
-# create the application instance 
-app = flask.Flask(__name__) 
-Bootstrap(app)
-app.config.update(
-	# 300 seconds = 5 minutes lifetime session
-	PERMANENT_SESSION_LIFETIME = 300,
-	# used to encrypt cookies
-	# secret key is generated each time app is restarted
-	SECRET_KEY = os.urandom(24),
-	# JS can't access cookies
-	SESSION_COOKIE_HTTPONLY = True,
-	# bi use of https
-	SESSION_COOKIE_SECURE = False,
-	# update cookies on each request
-	# cookie are outdated after PERMANENT_SESSION_LIFETIME seconds of idle
-	SESSION_REFRESH_EACH_REQUEST = True
-)
-
-
 # load all information
 CONFIG = loadConfig()
+
 PARAM = loadParam()
 LOCAL_API = "http://localhost:%(port)s/api/" % CONFIG
 # LOCAL_API = "http://167.114.29.52:%(port)s/api/" % CONFIG
 
-
 # show index
-@app.route("/")
+
+
+@appweb.route("/")
 def render():
-	global CONFIG, PARAM
-	spread()
+    global CONFIG, PARAM
 
-	weight = loadTBW()
-	tokens = sum(weight.values())
-	c = float(sum(weight.values()))
-	items = [[k,v/max(1.0, c)*100] for k,v in weight.items()]
+    #spread()
+    
+    weight = loadTBW()
+    tokens = sum(weight.values())
+    c = float(sum(weight.values()))
+    items = [[k,v/max(1.0, c)*100] for k,v in weight.items()]
 
-	return flask.render_template(
-		"bs-layout.html",
-		next_block=getNextForgeRound(CONFIG["peer"], **CONFIG),
-		items=sorted(items, key=lambda e:e[-1], reverse=True),
-		tokens=tokens,
-		username=PARAM.get("username", "_"),
-		share=PARAM.get("share", 1.),
-		threshold=PARAM.get("threshold", 0.),
-		symbol=PARAM.get("symbol", "token"),
-		explorer=CONFIG["explorer"]
-	)
+    return flask.render_template(
+        "bs-layout.html",
+        next_block="NaN", #getNextForgeRound(CONFIG["peer"], **CONFIG),
+        items=sorted(items, key=lambda e:e[-1], reverse=True),
+        tokens=tokens,
+        username=PARAM.get("username", "_"),
+        share=PARAM.get("share", 1.),
+        threshold=PARAM.get("threshold", 0.),
+        symbol=PARAM.get("symbol", "token"),
+        explorer=CONFIG["explorer"]
+    )
 
 
-@app.route("/history/<string:field>/<string:value>/<int:start>/<int:number>")
+@appweb.route("/history/<string:field>/<string:value>/<int:start>/<int:number>")
 def render_history(field, value, start, number):
 	global CONFIG, PARAM
 	if value:
@@ -89,7 +75,7 @@ def render_history(field, value, start, number):
 		)
 
 
-@app.route("/stats")
+@appweb.route("/stats")
 def get_stats():
 	return flask.render_template(
 		"bs-stats.html",
@@ -98,7 +84,7 @@ def get_stats():
 	)
 
 
-@app.route("/logs")
+@appweb.route("/logs")
 def get_logs():
 	# check if logged in from cookies
 	if not flask.session.get("logged", False):
@@ -113,7 +99,7 @@ def get_logs():
     )
 
 
-@app.route("/optimize/<string:blockchain>/<int:vote>/<string:usernames>/<string:offsets>/<int:delta>")
+@appweb.route("/optimize/<string:blockchain>/<int:vote>/<string:usernames>/<string:offsets>/<int:delta>")
 def optimize(blockchain, vote, usernames, offsets, delta):
 	delta = max(delta, 10)
 	pool = loadJson(os.path.join(ROOT, "pool.%s.json" % blockchain))
@@ -152,7 +138,7 @@ def optimize(blockchain, vote, usernames, offsets, delta):
 		return "No public pool available !"
 
 
-@app.route("/dashboard/share/<string:address>/<int:period>")
+@appweb.route("/dashboard/share/<string:address>/<int:period>")
 def compute_share(address, period):
 	username = PARAM["username"]
 
@@ -181,19 +167,19 @@ def compute_share(address, period):
 	)
 
 
-@app.teardown_appcontext
+@appweb.teardown_appcontext
 def close(*args, **kw):
 	if hasattr(flask.g, "database"):
 		flask.g.database.close()
 
 
-@app.context_processor
+@appweb.context_processor
 def override_url_for():
 	return dict(url_for=dated_url_for)
 
 
-## Identification
-@app.route("/login", methods=["GET", "POST"])
+# Identification
+@appweb.route("/login", methods=["GET", "POST"])
 def login():
 	global CONFIG, PARAM
 	# enable session lifetime to 10 min
@@ -219,7 +205,7 @@ def login():
 		return flask.render_template("bs-login.html")
 
 
-@app.route("/logout")
+@appweb.route("/logout")
 def logout():
 	# store the logged state
 	flask.session["logged"] = False
@@ -227,7 +213,7 @@ def logout():
 	return flask.redirect(flask.url_for("render"))
 
 
-@app.route("/manage")
+@appweb.route("/manage")
 def manage():
 	# check if logged in from cookies
 	if not flask.session.get("logged", False):
@@ -242,7 +228,7 @@ def dated_url_for(endpoint, **values):
 	if endpoint == 'static':
 		filename = values.get('filename', None)
 		if filename:
-			file_path = os.path.join(app.root_path,
+			file_path = os.path.join(appweb.root_path,
 									 endpoint, filename)
 			values['q'] = int(os.stat(file_path).st_mtime)
 	return flask.url_for(endpoint, **values)
@@ -255,22 +241,22 @@ def format_datetime(value, size='medium'):
 		fmt = "%a, %d.%m.%y"
 	elif size == 'medium':
 		fmt = "%a, %d.%m.%y %H:%M"
-	#the [:-6] permits to delete the +XX:YY at the end of the timestamp
+	# the [:-6] permits to delete the +XX:YY at the end of the timestamp
 	tuple_date = datetime.datetime.strptime(value[:-6], "%Y-%m-%d %H:%M:%S.%f")
 	return datetime.datetime.strftime(tuple_date, fmt)
-app.jinja_env.filters['datetime'] = format_datetime
+appweb.jinja_env.filters['datetime'] = format_datetime
 
 
 def replace_regex(value, pattern, repl):
-	app.logger.info("Valeur : %s, pattern : %s, repl : %s" % (value, pattern, repl))
-	app.logger.info("retour : %s" % re.sub(pattern, repl, value))
+	appweb.logger.info("Valeur : %s, pattern : %s, repl : %s" % (value, pattern, repl))
+	appweb.logger.info("retour : %s" % re.sub(pattern, repl, value))
 	return re.sub(pattern, repl, value)
-app.jinja_env.filters['replace_regex'] = replace_regex
+appweb.jinja_env.filters['replace_regex'] = replace_regex
 
 
 def connect():
 	if not hasattr(flask.g, "database"):
-		setattr(flask.g, "database", sqlite3.connect(os.path.join(app.root_path, "..", "pay.db")))
+		setattr(flask.g, "database", sqlite3.connect(os.path.join(appweb.root_path, "..", "pay.db")))
 		flask.g.database.row_factory = sqlite3.Row
 	return flask.g.database.cursor()
 
@@ -287,13 +273,14 @@ def search(table="transaction", **kw):
 
 def getFilesFromDirectory(dirname, ext, method=None):
 	files_data = {}
-	base = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-	for root, dirs, files in os.walk(os.path.join(base, dirname)):
-		for filename in files:
-			if filename.endswith(ext):
-				if method == 'json':
-					files_data[filename.replace(ext, "")] = loadJson(os.path.join(root, filename))
-				else: 
-					with io.open(os.path.join(root, filename), 'r') as in_:
-						files_data[filename.replace(ext, "")] = in_.read()
+	base = os.path.dirname(__file__)#os.path.join(os.path.dirname(__file__), ".."))
+	if bool(dirname):
+		for root, dirs, files in os.walk(os.path.join(base, dirname)):
+			for filename in files:
+				if filename.endswith(ext):
+					if method == 'json':
+						files_data[filename.replace(ext, "")] = loadJson(os.path.join(root, filename))
+					else: 
+						with io.open(os.path.join(root, filename), 'r') as in_:
+							files_data[filename.replace(ext, "")] = in_.read()
 	return files_data

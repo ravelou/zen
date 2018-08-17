@@ -45,7 +45,10 @@ def getBestSnapshot():
 
 
 def getNextForgeRound(seed, **kw):
-	forging_queue = requests.get(seed+"/api/delegates/getNextForgers?limit=%(delegates)d" % kw).json().get("delegates", [])
+	try: 
+		forging_queue = requests.get(seed+"/api/delegates/getNextForgers?limit=%(delegates)d" % kw, timeout=0.1).json().get("delegates", [])
+	except:
+		forging_queue = []
 	try:
 		delay_before_forge = float2minsec(forging_queue.index(kw["publicKey"]) * kw["blocktime"] / 60.)
 	except (KeyError, ValueError):
