@@ -10,7 +10,6 @@ class Delegate:
 	gift = property(
 		lambda obj: obj.share*obj.daily_forge/(obj.vote+obj.cumul-obj.exclude),
 		None, None,
-		""
 	)
 
 	@staticmethod
@@ -42,7 +41,7 @@ class Delegate:
 
 
 def best(*delegates):
-	return sorted(delegates, key=lambda d:d.gift, reverse=True)[0]
+    return sorted(delegates, key=lambda d: d.gift, reverse=True)[0]
 
 
 def reset(*delegates):
@@ -54,4 +53,4 @@ def solve(vote, delegates, step=1):
 	for c in range(step, vote, step):
 		best(*delegates).cumul += step
 	best(*delegates).cumul += (vote-c)
-	return {d.username:d.cumul for d in delegates}
+	return {d.username: d.cumul for d in delegates}
