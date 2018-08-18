@@ -3,9 +3,9 @@
 """
 #import os
 #import sys
-import app
+from app.views import appweb
 #sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 #print(sys.path)
 
 if __name__ == "__main__":
-	app.appweb.run()
+	appweb.run()
