@@ -11,8 +11,7 @@ import flask
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import app.opt as opt
 
-from app.viewsfunc import getFilesFromDirectory, search, connect
-from flask_bootstrap import Bootstrap
+from app.viewsfunc import getFilesFromDirectory, search
 from collections import OrderedDict
 from zen import tfa, crypto
 from zen.cmn import loadConfig, loadJson
@@ -45,7 +44,7 @@ def render():
 
     return flask.render_template(
         "bs-layout.html",
-        next_block="NaN",  # getNextForgeRound(CONFIG["peer"], **CONFIG),
+        next_block=getNextForgeRound(CONFIG["peer"], **CONFIG),
         items=sorted(items, key=lambda e: e[-1], reverse=True),
         tokens=tokens,
         username=PARAM.get("username", "_"),
@@ -253,11 +252,11 @@ def format_datetime(value, size='medium'):
     # the [:-6] permits to delete the +XX:YY at the end of the timestamp
     tuple_date = datetime.datetime.strptime(value[:-6], "%Y-%m-%d %H:%M:%S.%f")
     return datetime.datetime.strftime(tuple_date, fmt)
-appweb.jinja_env.filters['datetime'] = format_datetime
+appweb.jinja_env.filters['datetime'] = format_datetime #pylint: disable=E1101
 
 def replace_regex(value, pattern, repl):
-    appweb.logger.info("Valeur : %s, pattern : %s, repl : %s" %
+    appweb.logger.info("Valeur : %s, pattern : %s, repl : %s" % #pylint: disable=E1101
                        (value, pattern, repl))
-    appweb.logger.info("retour : %s" % re.sub(pattern, repl, value))
+    appweb.logger.info("retour : %s" % re.sub(pattern, repl, value))#pylint: disable=E1101
     return re.sub(pattern, repl, value)
-appweb.jinja_env.filters['replace_regex'] = replace_regex
+appweb.jinja_env.filters['replace_regex'] = replace_regex #pylint: disable=E1101
