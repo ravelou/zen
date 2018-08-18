@@ -1,24 +1,23 @@
 # -*- encoding:utf-8 -*-
 import os
-import io
 import re
-import json
-import flask
-import sqlite3
 import datetime
-import requests
 import sys
-import app.opt
+import json
+import requests
+import flask
+
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+import app.opt as opt
 
+from app.viewsfunc import getFilesFromDirectory, search, connect
 from flask_bootstrap import Bootstrap
 from collections import OrderedDict
 from zen import tfa, crypto
 from zen.cmn import loadConfig, loadJson
 from zen.chk import getNextForgeRound
 from zen.tbw import loadTBW, spread, loadParam
-
 
 from app import appweb
 
@@ -235,7 +234,6 @@ def manage():
         # render manage page
         return flask.render_template("manage.html")
 
-
 def dated_url_for(endpoint, **values):
     if endpoint == 'static':
         filename = values.get('filename', None)
@@ -245,10 +243,9 @@ def dated_url_for(endpoint, **values):
             values['q'] = int(os.stat(file_path).st_mtime)
     return flask.url_for(endpoint, **values)
 
-
 def format_datetime(value, size='medium'):
     if size == 'full':
-        fmt = "%A, %-d. %B %Y at %H:%M"
+        fmt = "%A, %d. %B %Y at %H:%M"
     elif size == 'minimal':
         fmt = "%a, %d.%m.%y"
     elif size == 'medium':
@@ -258,46 +255,9 @@ def format_datetime(value, size='medium'):
     return datetime.datetime.strftime(tuple_date, fmt)
 appweb.jinja_env.filters['datetime'] = format_datetime
 
-
 def replace_regex(value, pattern, repl):
     appweb.logger.info("Valeur : %s, pattern : %s, repl : %s" %
                        (value, pattern, repl))
     appweb.logger.info("retour : %s" % re.sub(pattern, repl, value))
     return re.sub(pattern, repl, value)
 appweb.jinja_env.filters['replace_regex'] = replace_regex
-
-
-def connect():
-    if not hasattr(flask.g, "database"):
-        setattr(flask.g, "database", sqlite3.connect(
-            os.path.join(appweb.root_path, "..", "pay.db")))
-        flask.g.database.row_factory = sqlite3.Row
-    return flask.g.database.cursor()
-
-
-def search(table="transaction", **kw):
-    cursor = connect()
-    cursor.execute(
-        "SELECT * FROM %s WHERE %s=? ORDER BY timestamp DESC;" % (
-            table, kw.keys()[0]),
-        (kw.values()[0], )
-    )
-    result = cursor.fetchall()
-    return [dict(zip(row.keys(), row)) for row in result]
-
-
-def getFilesFromDirectory(dirname, ext, method=None):
-    files_data = {}
-    # os.path.join(os.path.dirname(__file__), ".."))
-    base = os.path.dirname(__file__)
-    if bool(dirname):
-        for root, dirs, files in os.walk(os.path.join(base, dirname)):
-            for filename in files:
-                if filename.endswith(ext):
-                    if method == 'json':
-                        files_data[filename.replace(ext, "")] = loadJson(
-                            os.path.join(root, filename))
-                    else:
-                        with io.open(os.path.join(root, filename), 'r') as in_:
-                            files_data[filename.replace(ext, "")] = in_.read()
-    return files_data
