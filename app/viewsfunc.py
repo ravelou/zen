@@ -16,7 +16,7 @@ def connect():
     """
     if not hasattr(flask.g, "database"):
         setattr(flask.g, "database", sqlite3.connect(
-            os.path.join(appweb.root_path, "..", "pay.db")))
+            os.path.abspath(os.path.join(appweb.root_path, "..", "pay.db"))))
         flask.g.database.row_factory = sqlite3.Row
     return flask.g.database.cursor()
 

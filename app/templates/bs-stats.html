@@ -9,14 +9,14 @@
 		<h1 class="jumbotron">{{ username }} :: stats payment</h1>
 		<div class="row">
 			<div role="tabpanel">
-				<div class="col-sm-3">
+				<div class="col-sm-2">
 					<ul class="nav nav-pills brand-pills nav-stacked" role="tablist">
 			      	{% for itm in payments|sort(reverse=true) %}
 						<li role="presentation" class="brand-nav {% if loop.first %}active{% endif %}"><a href="#{{ itm|replace_regex('[./-]','') }}" aria-controls="{{ itm }}" role="tab" data-toggle="tab">{{ itm|replace_regex('.*(/)','') }}</a></li>
-					{% endfor %}      
+					{% endfor %}
 					</ul>
 				</div>
-				<div class="col-sm-9">
+				<div class="col-sm-10">
 					<div class="tab-content">
 						{% for itm in payments|sort(reverse=true) %}
 						<div role="tabpanel" class="tab-pane {% if loop.first %}active{% endif %}" id="{{ itm|replace_regex('[./-]','') }}">

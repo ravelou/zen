@@ -84,6 +84,9 @@ or
   - `rebuild`
   Download the last snapshot available and rebuild. This command is launched by
   `check` if necessary.
+  
+  - `dbbackup`
+  Backup the local server blockchain database to the snapshots directory
 
 ### True Block Weight command
 

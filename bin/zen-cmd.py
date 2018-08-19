@@ -7,7 +7,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import zen.chk
 from zen.cmn import setup, configure
-from zen.chk import check, rebuild, restart
+from zen.chk import check, rebuild, restart, dbbackup
 from zen.tbw import spread, extract, forgery
 from zen.pay import build, pay
 
